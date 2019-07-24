@@ -1,9 +1,16 @@
+import os
 from pyspark import SparkConf
 from pyspark.sql import SparkSession
 
+os.environ['PYTHONUNBUFFERED'] = '1'
+os.environ['JAVA_HOME'] = '/root/bigdata/jdk'
+os.environ['SPARK_HOME'] = '/root/bigdata/spark'
+os.environ['HADOOP_HOME'] = '/root/bigdata/hadoop'
+os.environ['PYSPARK_PYTHON'] = '/root/anaconda3/envs/reco_sys/bin/python'
+os.environ['PYSPARK_DRIVER_PYTHON'] = '/root/anaconda3/envs/reco_sys/bin/python'
+
 
 class SparkSessionBase(object):
-
     SPARK_APP_NAME = None
     SPARK_URL = "yarn"
 
