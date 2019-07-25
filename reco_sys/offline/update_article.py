@@ -1,10 +1,12 @@
 import os
 import sys
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(BASE_DIR))
 from offline import SparkSessionBase
 from datetime import datetime
 from datetime import timedelta
+from setting.default import CHANNEL_INFO
 import pyspark.sql.functions as F
 import pyspark
 import gc
@@ -65,7 +67,7 @@ def segmentation(partition):
         return filtered_words_list
 
     for row in partition:
-        sentence = re.sub("<.*?>", "", row.sentence)    # 替换掉标签数据
+        sentence = re.sub("<.*?>", "", row.sentence)  # 替换掉标签数据
         words = cut_sentence(sentence)
         yield row.article_id, row.channel_id, words
 
@@ -161,6 +163,7 @@ class UpdateArticle(SparkSessionBase):
         """
         cv_result = cv_model.transform(words_df)
         tfidf_result = idf_model.transform(cv_result)
+
         # print("transform compelete")
 
         # 取TOP-N的TFIDF值高的结果
@@ -282,8 +285,10 @@ class UpdateArticle(SparkSessionBase):
         _articleKeywordsWeights.registerTempTable("temptable")
         articleKeywordsWeights = self.spark.sql(
             "select article_id, min(channel_id) channel_id, collect_list(keyword) keyword_list, collect_list(weights) weights_list from temptable group by article_id")
+
         def _func(row):
             return row.article_id, row.channel_id, dict(zip(row.keyword_list, row.weights_list))
+
         articleKeywords = articleKeywordsWeights.rdd.map(_func).toDF(["article_id", "channel_id", "keywords"])
 
         # 2、主题词
@@ -316,13 +321,9 @@ class UpdateArticle(SparkSessionBase):
         return articleProfile
 
 
-
-
 if __name__ == '__main__':
     ua = UpdateArticle()
     sentence_df = ua.merge_article_data()
     if sentence_df.rdd.collect():
         rank, idf = ua.generate_article_label(sentence_df)
         articleProfile = ua.get_article_profile(rank, idf)
-
-
